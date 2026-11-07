@@ -53,7 +53,13 @@ export const AppContent: React.FC = () => {
           </div>
           <div className="flex items-center space-x-3">
             <button
-              onClick={() => window.open((import.meta as any).env?.VITE_TWIN_URL || 'http://localhost:5174', 'campusops-twin')}
+              onClick={() => {
+                if (window.parent && window.parent !== window) {
+                  window.parent.postMessage({ type: 'NAVIGATE_TWIN' }, '*');
+                } else {
+                  window.location.href = '/';
+                }
+              }}
               className="flex items-center space-x-1 px-3 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/40 text-emerald-300 hover:text-white text-xs font-semibold transition cursor-pointer"
               title="Return to 3D Digital Twin"
             >

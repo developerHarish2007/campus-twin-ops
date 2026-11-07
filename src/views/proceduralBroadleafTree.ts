@@ -176,3 +176,4 @@ function mergeBufferGeometriesSimple(geos: THREE.BufferGeometry[]): THREE.Buffer
   merged.setIndex(new THREE.BufferAttribute(indices, 1));
   return merged;
 }
+

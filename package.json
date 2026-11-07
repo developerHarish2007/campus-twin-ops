@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npx concurrently \"vite --port 5174\" \"npm run dev --prefix dashboard/frontend\"",
+    "dev:twin": "vite --port 5174",
     "dev:all": "npx concurrently \"vite --port 5174\" \"npm run dev --prefix dashboard/frontend\"",
     "build": "tsc -b && vite build"
   },

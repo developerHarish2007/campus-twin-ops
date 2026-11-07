@@ -44,7 +44,11 @@ export const Header: React.FC<HeaderProps> = ({
   ];
 
   const handleBackToTwin = () => {
-    window.open(twinUrl, 'campusops-twin');
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'NAVIGATE_TWIN' }, '*');
+    } else {
+      window.location.href = '/';
+    }
   };
 
   return (

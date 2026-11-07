@@ -143,6 +143,7 @@ function fallbackApiPlugin(): Plugin {
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/dashboard/',
   plugins: [react(), fallbackApiPlugin()],
   resolve: {
     alias: {

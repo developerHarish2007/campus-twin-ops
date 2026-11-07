@@ -111,4 +111,20 @@ function alignmentAssignments(): Plugin {
   };
 }
 
-export default defineConfig({ plugins: [react(), alignmentAssignments()] });
+export default defineConfig({
+  plugins: [react(), alignmentAssignments()],
+  server: {
+    port: 5174,
+    proxy: {
+      '/dashboard': {
+        target: 'http://localhost:5173',
+        changeOrigin: true,
+        ws: true,
+      },
+      '/api/v1': {
+        target: 'http://localhost:5173',
+        changeOrigin: true,
+      },
+    },
+  },
+});
