@@ -6,3 +6,10 @@ dist/
 *.pem
 *service-account*.json
 *.tsbuildinfo
+
+# Dev artifacts
+work/
+dashboard/campusops_antigravity_master_prompt.txt
+dashboard/CAMPUSOPS_FULL_PROJECT_CONTEXT_AND_RUN_GUIDE.txt
+dashboard/CampusOps_Master_Plan*.txt
+dashboard/outbox/*.json
