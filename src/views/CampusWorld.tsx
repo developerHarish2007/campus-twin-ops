@@ -30,8 +30,8 @@ import {
 } from '../data/registry/registryService';
 import { ScrollableDock } from './common/ScrollableDock';
 import { dashboardBridge } from '../services/dashboardBridge';
-import { createProceduralBroadleafTree } from './proceduralBroadleafTree';
 import { openDashboard } from '../config/urls';
+import { Tree, TreePreset } from '@dgreenheck/ez-tree';
 
 type XZ = { x: number; z: number };
 type ViewCommand = { type: 'focus' | 'overview'; revision: number; id?: string };
@@ -784,10 +784,8 @@ type TreeInstanceData = {
 };
 
 type TreeModelPair = {
-  nearBranches: BufferGeometry;
-  nearLeaves: BufferGeometry;
-  farBranches: BufferGeometry;
-  farLeaves: BufferGeometry;
+  branches: BufferGeometry;
+  leaves: BufferGeometry;
   leafMap?: Texture;
 };
 
@@ -839,14 +837,14 @@ function TreeBatch({
       <instancedMesh
         ref={branchRef}
         args={[branchesGeo, barkMat, instances.length]}
-        castShadow={quality && castShadow}
-        receiveShadow={quality}
+        castShadow={castShadow}
+        receiveShadow={true}
       />
       <instancedMesh
         ref={leafRef}
         args={[leavesGeo, leafMat, instances.length]}
-        castShadow={quality && castShadow}
-        receiveShadow={quality}
+        castShadow={castShadow}
+        receiveShadow={true}
       />
     </group>
   );
@@ -854,78 +852,107 @@ function TreeBatch({
 
 function CampusTrees({ data, textures, quality }: { data: OsmCampusData; textures: SurfaceTextures; quality: boolean }) {
   const treeModels = useMemo<TreeModelPair[]>(() => {
-    return [0, 1, 2, 3].map(variant => {
-      const near = createProceduralBroadleafTree(variant, false);
-      const far = createProceduralBroadleafTree(variant, true);
+    const seeds = [35729, 84920, 12044, 69421];
+    return seeds.map((seed, idx) => {
+      // Lush full leafy canopy matching tree_test_ground.png exactly
+      const raw = structuredClone((TreePreset as any)['Oak Medium']);
+      raw.seed = seed;
+      raw.leaves.size = 3.4;
+      raw.leaves.count = 42;
+      raw.leaves.alphaTest = 0.2;
+      if (idx === 1) { raw.branch.angle[1] = 50; }
+      if (idx === 2) { raw.branch.angle[1] = 58; }
+      if (idx === 3) { raw.branch.angle[1] = 46; }
+
+      const tree = new Tree();
+      tree.options.copy(raw);
+      tree.generate();
+
+      const leafMat = tree.leavesMesh.material as MeshPhongMaterial;
+      const leafMap = leafMat.map;
+      if (leafMap) {
+        leafMap.colorSpace = SRGBColorSpace;
+        leafMap.needsUpdate = true;
+      }
+
+      const leaves = tree.leavesMesh.geometry;
+      if (!leaves.attributes.normal) {
+        leaves.computeVertexNormals();
+      }
+
+      const branches = tree.branchesMesh.geometry;
+      if (branches.attributes.uv && !branches.attributes.uv2) {
+        branches.setAttribute('uv2', branches.attributes.uv.clone());
+      }
+
       return {
-        nearBranches: near.branches,
-        nearLeaves: near.leaves,
-        farBranches: far.branches,
-        farLeaves: far.leaves,
+        branches,
+        leaves,
+        leafMap: leafMap ?? undefined,
       };
     });
   }, []);
 
-  const { nearByVariant, farByVariant } = useMemo(() => {
+  const { byVariant } = useMemo(() => {
     // ─────────────────────────────────────────────────────────────────
     // SATELLITE-ACCURATE tree placement for SRM Easwari Engineering College
-    // Authentic broadleaf shade trees (neem, gulmohar, banyan, tecoma)
-    // 4 distinct procedural variants with tapered trunks and lush gradient canopies.
+    // Realistic broadleaf trees matching tree_test_ground.png:
+    // Oak Medium, Ash Medium, Aspen Medium, Oak Small with real foliage cards.
     // ─────────────────────────────────────────────────────────────────
     const CURATED_TREES: Array<{ x: number; z: number; scale: number; variant: number }> = [
       // 1. Main Entrance Avenue (broadleaf shade trees along avenue)
-      { x: 5.0, z: -175.0, scale: 1.05, variant: 0 },
-      { x: 18.0, z: -155.0, scale: 1.10, variant: 1 },
-      { x: 30.0, z: -135.0, scale: 0.98, variant: 2 },
-      { x: 65.0, z: -105.0, scale: 1.12, variant: 3 },
-      { x: 60.0, z: -85.0, scale: 1.05, variant: 0 },
-      { x: 75.0, z: -60.0, scale: 1.08, variant: 1 },
-      { x: 90.0, z: -35.0, scale: 0.98, variant: 2 },
-      { x: 105.0, z: -10.0, scale: 1.05, variant: 3 },
+      { x: 5.0, z: -175.0, scale: 0.39, variant: 0 },
+      { x: 18.0, z: -155.0, scale: 0.40, variant: 1 },
+      { x: 30.0, z: -135.0, scale: 0.38, variant: 2 },
+      { x: 65.0, z: -105.0, scale: 0.41, variant: 3 },
+      { x: 60.0, z: -85.0, scale: 0.39, variant: 0 },
+      { x: 75.0, z: -60.0, scale: 0.40, variant: 1 },
+      { x: 90.0, z: -35.0, scale: 0.38, variant: 2 },
+      { x: 105.0, z: -10.0, scale: 0.39, variant: 3 },
       
       // 2. North Compound Wall (dense tree canopy line along northern border)
-      { x: -25.0, z: -170.0, scale: 1.02, variant: 0 },
-      { x: 0.0, z: -185.0, scale: 1.08, variant: 1 },
-      { x: 25.0, z: -188.0, scale: 0.96, variant: 2 },
-      { x: 38.0, z: -160.0, scale: 1.04, variant: 3 },
-      { x: 80.0, z: -115.0, scale: 1.10, variant: 0 },
-      { x: 110.0, z: -125.0, scale: 0.98, variant: 1 },
-      { x: 140.0, z: -110.0, scale: 1.05, variant: 2 },
-      { x: 185.0, z: -42.0, scale: 1.08, variant: 3 },
+      { x: -25.0, z: -170.0, scale: 0.38, variant: 0 },
+      { x: 0.0, z: -185.0, scale: 0.39, variant: 1 },
+      { x: 25.0, z: -188.0, scale: 0.37, variant: 2 },
+      { x: 38.0, z: -160.0, scale: 0.38, variant: 3 },
+      { x: 80.0, z: -115.0, scale: 0.39, variant: 0 },
+      { x: 110.0, z: -125.0, scale: 0.37, variant: 1 },
+      { x: 140.0, z: -110.0, scale: 0.38, variant: 2 },
+      { x: 185.0, z: -42.0, scale: 0.39, variant: 3 },
 
       // 3. East Compound Wall (behind Electronics Block & Auditorium)
-      { x: 240.0, z: -30.0, scale: 1.04, variant: 0 },
-      { x: 240.0, z: -5.0, scale: 1.08, variant: 1 },
-      { x: 246.0, z: 75.0, scale: 1.02, variant: 2 },
-      { x: 238.0, z: 65.0, scale: 0.98, variant: 3 },
-      { x: 230.0, z: 105.0, scale: 1.05, variant: 0 },
-      { x: 220.0, z: 140.0, scale: 1.10, variant: 1 },
-      { x: 215.0, z: 195.0, scale: 1.02, variant: 2 },
+      { x: 240.0, z: -30.0, scale: 0.38, variant: 0 },
+      { x: 240.0, z: -5.0, scale: 0.39, variant: 1 },
+      { x: 246.0, z: 75.0, scale: 0.38, variant: 2 },
+      { x: 238.0, z: 65.0, scale: 0.37, variant: 3 },
+      { x: 230.0, z: 105.0, scale: 0.38, variant: 0 },
+      { x: 220.0, z: 140.0, scale: 0.39, variant: 1 },
+      { x: 215.0, z: 195.0, scale: 0.38, variant: 2 },
 
       // 4. South Compound Wall (behind Main Block, Civil Block & Hostels)
-      { x: 145.0, z: 188.0, scale: 1.06, variant: 1 },
-      { x: 75.0, z: 195.0, scale: 1.12, variant: 2 },
-      { x: -5.0, z: 192.0, scale: 0.98, variant: 3 },
-      { x: -40.0, z: 190.0, scale: 1.04, variant: 0 },
-      { x: -75.0, z: 192.0, scale: 1.08, variant: 1 },
-      { x: -160.0, z: 168.0, scale: 0.96, variant: 2 },
-      { x: -225.0, z: 156.0, scale: 1.05, variant: 3 },
+      { x: 145.0, z: 188.0, scale: 0.38, variant: 1 },
+      { x: 75.0, z: 195.0, scale: 0.39, variant: 2 },
+      { x: -5.0, z: 192.0, scale: 0.37, variant: 3 },
+      { x: -40.0, z: 190.0, scale: 0.38, variant: 0 },
+      { x: -75.0, z: 192.0, scale: 0.39, variant: 1 },
+      { x: -160.0, z: 168.0, scale: 0.37, variant: 2 },
+      { x: -225.0, z: 156.0, scale: 0.38, variant: 3 },
 
       // 5. West Perimeter (behind Workshops and Sports Ground boundary)
-      { x: -240.0, z: 135.0, scale: 1.02, variant: 0 },
-      { x: -228.0, z: 85.0, scale: 1.08, variant: 1 },
-      { x: -170.0, z: 68.0, scale: 0.98, variant: 2 },
-      { x: -155.0, z: 30.0, scale: 1.05, variant: 3 },
-      { x: -135.0, z: 15.0, scale: 1.10, variant: 0 },
+      { x: -240.0, z: 135.0, scale: 0.38, variant: 0 },
+      { x: -228.0, z: 85.0, scale: 0.39, variant: 1 },
+      { x: -170.0, z: 68.0, scale: 0.37, variant: 2 },
+      { x: -155.0, z: 30.0, scale: 0.38, variant: 3 },
+      { x: -135.0, z: 15.0, scale: 0.39, variant: 0 },
 
       // 6. Courtyard Lawns & Gardens (authentic shade trees in open green spaces)
-      { x: 15.0, z: 32.0, scale: 0.95, variant: 0 },
-      { x: 25.0, z: 25.0, scale: 0.98, variant: 3 },
-      { x: 50.0, z: 5.0, scale: 1.02, variant: 1 },
-      { x: 70.0, z: 8.0, scale: 0.96, variant: 2 },
-      { x: -30.0, z: 78.0, scale: 1.04, variant: 0 },
-      { x: -60.0, z: 75.0, scale: 1.00, variant: 1 },
-      { x: -80.0, z: 75.0, scale: 1.02, variant: 2 },
+      { x: 15.0, z: 32.0, scale: 0.36, variant: 0 },
+      { x: 25.0, z: 25.0, scale: 0.37, variant: 3 },
+      { x: 50.0, z: 5.0, scale: 0.38, variant: 1 },
+      { x: 70.0, z: 8.0, scale: 0.36, variant: 2 },
+      { x: -30.0, z: 78.0, scale: 0.38, variant: 0 },
+      { x: -60.0, z: 75.0, scale: 0.37, variant: 1 },
+      { x: -80.0, z: 75.0, scale: 0.38, variant: 2 },
     ];
 
     const allBuildings = [
@@ -960,8 +987,7 @@ function CampusTrees({ data, textures, quality }: { data: OsmCampusData; texture
       return true;
     };
 
-    const nearByVariant: TreeInstanceData[][] = [[], [], [], []];
-    const farByVariant: TreeInstanceData[][] = [[], [], [], []];
+    const byVariant: TreeInstanceData[][] = [[], [], [], []];
     const dummy = new Object3D();
 
     const baseLeafTints = [
@@ -1000,15 +1026,10 @@ function CampusTrees({ data, textures, quality }: { data: OsmCampusData; texture
         barkColor: new Color('#564132').offsetHSL(0, 0, (pHash2 - 0.5) * 0.08),
       };
 
-      const distCenter = Math.hypot(t.x - 38, t.z - 68);
-      if (distCenter <= 100) {
-        nearByVariant[varIdx].push(instData);
-      } else {
-        farByVariant[varIdx].push(instData);
-      }
+      byVariant[varIdx].push(instData);
     });
 
-    return { nearByVariant, farByVariant };
+    return { byVariant };
   }, [data]);
 
   const barkMat = useMemo(() => {
@@ -1035,41 +1056,36 @@ function CampusTrees({ data, textures, quality }: { data: OsmCampusData; texture
   }, [textures]);
 
   const leafMats = useMemo(() => {
-    const tints = ['#ffffff', '#f4fff0', '#eefbf2', '#fafff2'];
-    return tints.map(tint => {
+    const tints = ['#427330', '#3b7428', '#44782e', '#366c22'];
+    return tints.map((tint, idx) => {
+      const model = treeModels[idx];
       return new MeshStandardMaterial({
+        map: model?.leafMap,
         color: new Color(tint),
-        vertexColors: true,
-        roughness: 0.76,
-        metalness: 0.02,
+        alphaTest: 0.2,
+        alphaToCoverage: true,
+        transparent: false,
+        depthWrite: true,
         side: DoubleSide,
+        roughness: 0.95,
+        metalness: 0.0,
       });
     });
-  }, []);
+  }, [treeModels]);
 
   return (
     <group>
       {treeModels.map((model, idx) => (
-        <group key={'tree-variant-grp-' + idx}>
-          <TreeBatch
-            branchesGeo={model.nearBranches}
-            leavesGeo={model.nearLeaves}
-            barkMat={barkMat}
-            leafMat={leafMats[idx]}
-            instances={nearByVariant[idx] ?? []}
-            quality={quality}
-            castShadow={true}
-          />
-          <TreeBatch
-            branchesGeo={model.farBranches}
-            leavesGeo={model.farLeaves}
-            barkMat={barkMat}
-            leafMat={leafMats[idx]}
-            instances={farByVariant[idx] ?? []}
-            quality={quality}
-            castShadow={false}
-          />
-        </group>
+        <TreeBatch
+          key={'tree-variant-grp-' + idx}
+          branchesGeo={model.branches}
+          leavesGeo={model.leaves}
+          barkMat={barkMat}
+          leafMat={leafMats[idx]}
+          instances={byVariant[idx] ?? []}
+          quality={quality}
+          castShadow={true}
+        />
       ))}
     </group>
   );
@@ -1866,11 +1882,12 @@ function notifyStats(s: SceneStatsData) {
 }
 
 function SceneStats() {
-  const { gl } = useThree();
+  const { gl, scene } = useThree();
   const sample = useRef({ frames: 0, elapsed: 0 });
   const lastMetrics = useRef({ calls: 0, tris: 0 });
 
   useEffect(() => {
+    (window as any).__SCENE__ = scene;
     const orig = gl.render.bind(gl);
     gl.render = (scene: any, camera: any) => {
       orig(scene, camera);

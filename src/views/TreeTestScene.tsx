@@ -4,106 +4,6 @@ import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { Tree, TreePreset } from '@dgreenheck/ez-tree';
 
-export function createProceduralPalm(): { branches: THREE.BufferGeometry; leaves: THREE.BufferGeometry } {
-  // Trunk: slender curved coconut palm
-  const trunkCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(0.4, 4, 0.2),
-    new THREE.Vector3(0.9, 9, 0.5),
-    new THREE.Vector3(1.3, 14, 0.8),
-  ]);
-  const trunkGeo = new THREE.TubeGeometry(trunkCurve, 20, 0.38, 8, false);
-
-  // Fronds: 16 arching palm fronds
-  const frondCount = 16;
-  const leafGeos: THREE.BufferGeometry[] = [];
-
-  for (let i = 0; i < frondCount; i++) {
-    const angle = (i / frondCount) * Math.PI * 2 + (i % 2 === 0 ? 0.08 : -0.08);
-    const droop = 0.55 + (i % 3) * 0.12;
-    const length = 4.8 + (i % 2) * 0.6;
-
-    const top = new THREE.Vector3(1.3, 14, 0.8);
-    const mid = new THREE.Vector3(
-      top.x + Math.cos(angle) * (length * 0.5),
-      top.y + 0.9,
-      top.z + Math.sin(angle) * (length * 0.5)
-    );
-    const tip = new THREE.Vector3(
-      top.x + Math.cos(angle) * length,
-      top.y - droop * 2.2,
-      top.z + Math.sin(angle) * length
-    );
-
-    const spine = new THREE.CatmullRomCurve3([top, mid, tip]);
-    const segments = 10;
-    const pts = spine.getPoints(segments);
-
-    const verts: number[] = [];
-    const uvs: number[] = [];
-    const indices: number[] = [];
-
-    for (let s = 0; s <= segments; s++) {
-      const p = pts[s];
-      const t = s / segments;
-      const width = Math.sin(t * Math.PI) * 0.85 + 0.12;
-      const normal = new THREE.Vector3(-Math.sin(angle), 0, Math.cos(angle)).normalize();
-
-      verts.push(p.x - normal.x * width, p.y, p.z - normal.z * width);
-      verts.push(p.x + normal.x * width, p.y, p.z + normal.z * width);
-      uvs.push(0, t, 1, t);
-
-      if (s < segments) {
-        const base = s * 2;
-        indices.push(base, base + 1, base + 2);
-        indices.push(base + 1, base + 3, base + 2);
-      }
-    }
-
-    const frondGeo = new THREE.BufferGeometry();
-    frondGeo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
-    frondGeo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-    frondGeo.setIndex(indices);
-    frondGeo.computeVertexNormals();
-    leafGeos.push(frondGeo);
-  }
-
-  // Merge leaf geometries
-  let totalVerts = 0, totalIndices = 0;
-  leafGeos.forEach(g => {
-    totalVerts += g.attributes.position.count;
-    totalIndices += g.index ? g.index.count : 0;
-  });
-
-  const pos = new Float32Array(totalVerts * 3);
-  const uv = new Float32Array(totalVerts * 2);
-  const norm = new Float32Array(totalVerts * 3);
-  const indices = new Uint32Array(totalIndices);
-
-  let vOffset = 0, iOffset = 0, indexVertexOffset = 0;
-  leafGeos.forEach(g => {
-    pos.set(g.attributes.position.array as Float32Array, vOffset * 3);
-    if (g.attributes.uv) uv.set(g.attributes.uv.array as Float32Array, vOffset * 2);
-    if (g.attributes.normal) norm.set(g.attributes.normal.array as Float32Array, vOffset * 3);
-
-    if (g.index) {
-      const idx = g.index.array;
-      for (let j = 0; j < idx.length; j++) indices[iOffset + j] = idx[j] + indexVertexOffset;
-      iOffset += idx.length;
-    }
-    indexVertexOffset += g.attributes.position.count;
-    vOffset += g.attributes.position.count;
-  });
-
-  const mergedLeaves = new THREE.BufferGeometry();
-  mergedLeaves.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  mergedLeaves.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-  mergedLeaves.setAttribute('normal', new THREE.BufferAttribute(norm, 3));
-  mergedLeaves.setIndex(new THREE.BufferAttribute(indices, 1));
-
-  return { branches: trunkGeo, leaves: mergedLeaves };
-}
-
 interface TreeParams {
   presetName: string;
   leafScale: number;
@@ -156,41 +56,6 @@ function InnerTree({ params, onStats }: { params: TreeParams; onStats: (stats: a
         if (Array.isArray(c.material)) c.material.forEach((m: any) => m.dispose());
         else c.material.dispose();
       }
-    }
-
-    if (params.presetName === 'Palm') {
-      const palm = createProceduralPalm();
-      if (palm.branches.attributes.uv && !palm.branches.attributes.uv2) {
-        palm.branches.setAttribute('uv2', palm.branches.attributes.uv.clone());
-      }
-      const trunkMat = new THREE.MeshStandardMaterial({
-        map: barkTextures.diff,
-        normalMap: barkTextures.nor,
-        roughnessMap: barkTextures.rough,
-        aoMap: barkTextures.ao,
-        aoMapIntensity: 1.0,
-        color: '#8b6c4b',
-        roughness: 0.92,
-      });
-      const leafMat = new THREE.MeshStandardMaterial({
-        color: params.leafColor,
-        roughness: 0.65,
-        side: THREE.DoubleSide,
-      });
-      const trunkMesh = new THREE.Mesh(palm.branches, trunkMat);
-      trunkMesh.castShadow = true;
-      trunkMesh.receiveShadow = true;
-      const leafMesh = new THREE.Mesh(palm.leaves, leafMat);
-      leafMesh.castShadow = true;
-      leafMesh.receiveShadow = true;
-      group.add(trunkMesh);
-      group.add(leafMesh);
-      onStats({
-        branchTris: palm.branches.index ? palm.branches.index.count / 3 : 0,
-        leafTris: palm.leaves.index ? palm.leaves.index.count / 3 : 0,
-        hasLeaves: true,
-      });
-      return;
     }
 
     const rawPreset = (TreePreset as any)[params.presetName];
@@ -380,54 +245,50 @@ export function TreeTestScene() {
             onChange={e => setParams(p => ({ ...p, presetName: e.target.value }))}
             style={{ background: '#2d3748', color: '#fff', padding: 4, borderRadius: 4, border: '1px solid #4a5568' }}
           >
-            {['Oak Medium', 'Oak Small', 'Oak Large', 'Aspen Medium', 'Ash Medium', 'Pine Medium', 'Palm'].map(p => (
+            {['Oak Medium', 'Oak Small', 'Oak Large', 'Aspen Medium', 'Ash Medium', 'Pine Medium'].map(p => (
               <option key={p} value={p}>{p}</option>
             ))}
           </select>
         </div>
 
-        {params.presetName !== 'Palm' && (
-          <>
-            <div style={{ marginBottom: 8 }}>
-              <label>Canopy Foliage Size ({params.leafScale}): </label>
-              <input
-                type="range"
-                min={1.5}
-                max={5.5}
-                step={0.1}
-                value={params.leafScale}
-                onChange={e => setParams(p => ({ ...p, leafScale: parseFloat(e.target.value) }))}
-                style={{ width: '100%' }}
-              />
-            </div>
+        <div style={{ marginBottom: 8 }}>
+          <label>Canopy Foliage Size ({params.leafScale}): </label>
+          <input
+            type="range"
+            min={1.5}
+            max={5.5}
+            step={0.1}
+            value={params.leafScale}
+            onChange={e => setParams(p => ({ ...p, leafScale: parseFloat(e.target.value) }))}
+            style={{ width: '100%' }}
+          />
+        </div>
 
-            <div style={{ marginBottom: 8 }}>
-              <label>Leaf Density ({params.leafCount}): </label>
-              <input
-                type="range"
-                min={16}
-                max={72}
-                step={2}
-                value={params.leafCount}
-                onChange={e => setParams(p => ({ ...p, leafCount: parseInt(e.target.value) }))}
-                style={{ width: '100%' }}
-              />
-            </div>
+        <div style={{ marginBottom: 8 }}>
+          <label>Leaf Density ({params.leafCount}): </label>
+          <input
+            type="range"
+            min={16}
+            max={72}
+            step={2}
+            value={params.leafCount}
+            onChange={e => setParams(p => ({ ...p, leafCount: parseInt(e.target.value) }))}
+            style={{ width: '100%' }}
+          />
+        </div>
 
-            <div style={{ marginBottom: 8 }}>
-              <label>Alpha Cutout ({params.alphaTest}): </label>
-              <input
-                type="range"
-                min={0.05}
-                max={0.6}
-                step={0.05}
-                value={params.alphaTest}
-                onChange={e => setParams(p => ({ ...p, alphaTest: parseFloat(e.target.value) }))}
-                style={{ width: '100%' }}
-              />
-            </div>
-          </>
-        )}
+        <div style={{ marginBottom: 8 }}>
+          <label>Alpha Cutout ({params.alphaTest}): </label>
+          <input
+            type="range"
+            min={0.05}
+            max={0.6}
+            step={0.05}
+            value={params.alphaTest}
+            onChange={e => setParams(p => ({ ...p, alphaTest: parseFloat(e.target.value) }))}
+            style={{ width: '100%' }}
+          />
+        </div>
 
         <div style={{ marginBottom: 10 }}>
           <label>Canopy Tint: </label>

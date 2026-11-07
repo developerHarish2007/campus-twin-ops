@@ -24,7 +24,7 @@ All third-party visual assets are kept under `public/assets/` and their source a
 
 | Asset / Generator | Implementation | Source | Licence |
 | --- | --- | --- | --- |
-| Procedural Broadleaf Shade Tree Generator | Custom broadleaf shade tree generator (`createProceduralBroadleafTree`): tapered trunk with flared base & bark UVs, 3 crown boughs, and 6 overlapping noisy foliage clusters with darker underside and lighter top vertex gradient shading, in 4 shape & curvature variants | Custom implementation in `src/views/proceduralBroadleafTree.ts` | CC0 / Project license |
+| Procedural Tree Geometry (EZ-Tree) | 4 broadleaf variants (Oak Medium, Oak Large, Oak Small, Ash Medium) with lush leaf cards matching tree_test_ground.png, bark PBR normal/roughness/AO | [GitHub project](https://github.com/dgreenheck/ez-tree) (`@dgreenheck/ez-tree`) | MIT code licence; bundled leaf textures under MIT |
 | Procedural Noise Texture Generator | Seamless 256×256 multi-octave 2D Perlin noise canvas texture (`createSmoothNoiseTexture`) used for macro terrain blending | Custom implementation in `src/views/CampusWorld.tsx` | Project license |
 
 ## 3. Map Data & Geometries
