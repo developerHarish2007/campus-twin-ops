@@ -859,7 +859,7 @@ function CampusTrees({ data, textures, quality }: { data: OsmCampusData; texture
       raw.seed = seed;
       raw.leaves.size = 3.4;
       raw.leaves.count = 42;
-      raw.leaves.alphaTest = 0.2;
+      raw.leaves.alphaTest = 0.52;
       if (idx === 1) { raw.branch.angle[1] = 50; }
       if (idx === 2) { raw.branch.angle[1] = 58; }
       if (idx === 3) { raw.branch.angle[1] = 46; }
@@ -1062,12 +1062,11 @@ function CampusTrees({ data, textures, quality }: { data: OsmCampusData; texture
       return new MeshStandardMaterial({
         map: model?.leafMap,
         color: new Color(tint),
-        alphaTest: 0.2,
-        alphaToCoverage: true,
+        alphaTest: 0.52,
         transparent: false,
         depthWrite: true,
         side: DoubleSide,
-        roughness: 0.95,
+        roughness: 1.0,
         metalness: 0.0,
       });
     });
