@@ -13,6 +13,7 @@ import {
   X,
   HelpCircle,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   Radio,
   Zap,
@@ -116,6 +117,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     };
     fetchNodes();
     fetchRecentTickets();
+    const interval = setInterval(fetchRecentTickets, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchRecentTickets = async () => {
@@ -202,7 +205,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             id: (Date.now() + 1).toString(),
             sender: 'assistant',
             text: res.clarification_needed
-              ? `Logging Ticket #${res.ticket_number}. Requirement: ${res.clarification_question}`
+              ? (res.ticket_number ? `Ticket #${res.ticket_number} in progress: ${res.clarification_question}` : res.clarification_question)
               : `Ticket #${res.ticket_number} created for ${res.target_node_code || res.target_node_name || 'campus quadrant'} (${res.category || 'General'}). Automated dispatch initiated.`,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             ticketInfo: res.ticket_number
@@ -293,8 +296,36 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     >
       {/* 1. Top Navigation Bar (Structured compact 52px utility bar) */}
       <header className="h-13 border-b border-[#1F2937]/80 bg-[#0B0F19]/85 backdrop-blur-md px-6 flex items-center justify-between shrink-0 select-none z-30">
-        {/* Left: Brand Badge & Subtle Breadcrumbs */}
+        {/* Left: Navigation, Brand Badge & Subtle Breadcrumbs */}
         <div className="flex items-center space-x-3 shrink-0">
+          {/* Back to 3D Twin Button */}
+          <button
+            onClick={() => {
+              if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'NAVIGATE_TWIN' }, '*');
+              } else {
+                window.location.href = '/';
+              }
+            }}
+            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 transition shadow-sm cursor-pointer"
+            title="Return to CampusOps 3D Digital Twin"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>← Back to 3D Twin</span>
+          </button>
+
+          {/* Escape / Switch Role Button */}
+          <button
+            onClick={() => onResetChoice?.()}
+            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white border border-slate-700 hover:border-indigo-500 transition shadow-sm cursor-pointer"
+            title="Escape / Switch Role (Esc)"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>← Switch Role (Esc)</span>
+          </button>
+
+          <div className="h-4 w-px bg-[#1F2937]" />
+
           <div className="flex items-center space-x-2">
             <div className="h-7 w-7 rounded bg-[#2563EB] flex items-center justify-center font-bold text-white text-xs shadow-sm">
               EO
@@ -304,18 +335,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 SRM Easwari
               </span>
               <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-[#111827] text-[#9CA3AF] border border-[#1F2937]">
-                Autonomous
+                Student
               </span>
             </div>
           </div>
-
-          <div className="h-4 w-px bg-[#1F2937]" />
-
-          <nav className="text-xs text-[#9CA3AF] flex items-center gap-1.5">
-            <span>CampusOps</span>
-            <span className="text-[#374151]">/</span>
-            <span className="text-[#E5E7EB] font-medium">Facilities</span>
-          </nav>
         </div>
 
         {/* Center: Quick Global Search Bar */}

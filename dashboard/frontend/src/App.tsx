@@ -34,6 +34,22 @@ export const AppContent: React.FC = () => {
     localStorage.removeItem('campusops_portal_mode');
   };
 
+  // Global Escape key listener to escape back to role selection screen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        const activeTag = document.activeElement?.tagName?.toLowerCase();
+        if (activeTag === 'input' || activeTag === 'textarea') {
+          (document.activeElement as HTMLElement)?.blur();
+          return;
+        }
+        handleResetChoice();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // If no portal is selected yet, show the Role Selection Screen
   if (!portalMode) {
     return (

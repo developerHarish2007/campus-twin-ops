@@ -15,6 +15,7 @@ export interface SeededUser {
 
 export const WORKER_USERS: SeededUser[] = [
   {
+    id: 'usr_karthik',
     email: 'arunak0787@gmail.com',
     name: 'Karthik Subramanian',
     role: 'TECHNICIAN',
@@ -25,6 +26,7 @@ export const WORKER_USERS: SeededUser[] = [
     badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30'
   },
   {
+    id: 'usr_ramesh',
     email: 'tech_plumb_1@easwari.edu',
     name: 'Ramesh Venkatesan',
     role: 'TECHNICIAN',
@@ -35,6 +37,7 @@ export const WORKER_USERS: SeededUser[] = [
     badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/30'
   },
   {
+    id: 'usr_suresh',
     email: 'tech_net_1@easwari.edu',
     name: 'Suresh Kumar',
     role: 'TECHNICIAN',
@@ -45,6 +48,7 @@ export const WORKER_USERS: SeededUser[] = [
     badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30'
   },
   {
+    id: 'usr_mohanraj',
     email: 'tech_sos_1@easwari.edu',
     name: 'Mohanraj Krishnan',
     role: 'TECHNICIAN',
@@ -55,6 +59,7 @@ export const WORKER_USERS: SeededUser[] = [
     badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-500/30'
   },
   {
+    id: 'usr_thangavel',
     email: 'tech_sweeper_1@easwari.edu',
     name: 'Thangavel Murugan',
     role: 'TECHNICIAN',
@@ -65,6 +70,7 @@ export const WORKER_USERS: SeededUser[] = [
     badgeColor: 'bg-teal-500/20 text-teal-300 border-teal-500/30'
   },
   {
+    id: 'usr_selvam',
     email: 'jeevadarwin007@gmail.com',
     name: 'Selvam Muthuraj',
     role: 'TECHNICIAN',
@@ -78,6 +84,7 @@ export const WORKER_USERS: SeededUser[] = [
 
 export const SEEDED_USERS: SeededUser[] = [
   {
+    id: 'usr_admin',
     email: 'sys_admin_1@easwari.edu',
     name: 'Anand Natarajan',
     role: 'SYS_ADMIN',
@@ -85,6 +92,7 @@ export const SEEDED_USERS: SeededUser[] = [
     badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/30'
   },
   {
+    id: 'usr_student',
     email: 'student_1@easwari.edu',
     name: 'Aditya Raman',
     role: 'STUDENT_FACULTY',
@@ -117,13 +125,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setToken(res.access_token);
         setCurrentUser({
           ...user,
-          id: res.user_id,
-          name: res.full_name,
-          role: res.role,
+          id: res.user_id || user.id,
+          name: res.full_name || user.name,
+          role: res.role || user.role,
         });
+      } else {
+        setCurrentUser(user);
       }
     } catch (err) {
-      console.error('Failed to log in seeded user:', err);
+      console.warn('Fallback authentication used for user:', user.name);
+      setCurrentUser(user);
     } finally {
       setLoading(false);
     }

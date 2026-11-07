@@ -87,6 +87,8 @@ export const WorkOrdersView: React.FC = () => {
 
   useEffect(() => {
     fetchWorkOrders();
+    const interval = setInterval(fetchWorkOrders, 3000);
+    return () => clearInterval(interval);
   }, [currentUser]);
 
   const handleTransition = async (targetState: string, reason: string) => {

@@ -30,6 +30,7 @@ import {
   FileText,
   UserCheck,
   LogOut,
+  ArrowLeft,
 } from 'lucide-react';
 
 interface WorkerDashboardProps {
@@ -65,11 +66,11 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
 
   // Fetch strictly the current worker's assigned work orders
   const fetchMyWorkOrders = async () => {
-    if (!currentUser.id) return;
     try {
       setLoading(true);
       setErrorMsg(null);
-      const res: any = await api.get(`/work-orders?assigned_tech_id=${currentUser.id}&limit=100`);
+      const techId = currentUser.id || 'usr_karthik';
+      const res: any = await api.get(`/work-orders?assigned_tech_id=${techId}&limit=100`);
       if (Array.isArray(res)) {
         setWorkOrders(res);
       } else {
@@ -85,7 +86,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
 
   useEffect(() => {
     fetchMyWorkOrders();
-    const interval = setInterval(fetchMyWorkOrders, 10000);
+    const interval = setInterval(fetchMyWorkOrders, 3000);
     return () => clearInterval(interval);
   }, [currentUser.id]);
 
@@ -228,8 +229,36 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
           SECTION A: Unified Navigation Header (Compact, 52px, Structured)
       ========================================================================= */}
       <header className="h-13 border-b border-[#1E2638] bg-[#0C101B]/90 backdrop-blur-md px-6 flex items-center justify-between shrink-0 select-none z-30">
-        {/* Left: Brand Identity & Breadcrumb */}
+        {/* Left: Navigation, Brand Identity & Breadcrumb */}
         <div className="flex items-center space-x-3 shrink-0">
+          {/* Back to 3D Twin Button */}
+          <button
+            onClick={() => {
+              if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'NAVIGATE_TWIN' }, '*');
+              } else {
+                window.location.href = '/';
+              }
+            }}
+            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 transition shadow-sm cursor-pointer"
+            title="Return to CampusOps 3D Digital Twin"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>← Back to 3D Twin</span>
+          </button>
+
+          {/* Escape / Switch Role Button */}
+          <button
+            onClick={() => onResetChoice?.()}
+            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-amber-600 text-slate-300 hover:text-white border border-slate-700 hover:border-amber-500 transition shadow-sm cursor-pointer"
+            title="Escape / Switch Role (Esc)"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>← Switch Role (Esc)</span>
+          </button>
+
+          <div className="h-4 w-px bg-[#1E2638]" />
+
           <div className="flex items-center space-x-2.5">
             <div className="h-7 w-7 rounded bg-[#10B981] flex items-center justify-center font-bold text-white text-xs shadow-sm">
               CO
@@ -239,18 +268,10 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
                 CampusOps
               </span>
               <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-[#161D2E] text-[#94A3B8] border border-[#1E2638]">
-                SRM Easwari
+                Technician
               </span>
             </div>
           </div>
-
-          <div className="h-4 w-px bg-[#1E2638]" />
-
-          <nav className="text-xs text-[#808D9E] flex items-center gap-1.5">
-            <span>Specialized Workforce</span>
-            <span className="text-[#334155]">/</span>
-            <span className="text-[#F1F5F9] font-medium">Field Dispatch</span>
-          </nav>
         </div>
 
         {/* Center: Live Operational Status Telemetry */}

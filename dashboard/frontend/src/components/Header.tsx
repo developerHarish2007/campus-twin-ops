@@ -65,6 +65,16 @@ export const Header: React.FC<HeaderProps> = ({
           <span>← Back to 3D Twin</span>
         </button>
 
+        {/* Escape / Switch Portal Button */}
+        <button
+          onClick={onResetChoice}
+          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white border border-slate-700 hover:border-indigo-500 transition shadow-sm cursor-pointer"
+          title="Escape / Switch Role (Esc)"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>← Switch Role (Esc)</span>
+        </button>
+
         <div className="h-5 w-px bg-slate-800 mx-1" />
 
         <div className="flex items-center space-x-2.5">

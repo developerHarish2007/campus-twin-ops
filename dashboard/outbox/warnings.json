@@ -36,7 +36,7 @@
   {
     "id": "pred_PG-201-PROJ_lamp_end_of_life",
     "source": "predictive",
-    "severity": "warning",
+    "severity": "resolved",
     "room": "PG-201",
     "deviceId": "PG-201-PROJ",
     "failureMode": "lamp_end_of_life",
