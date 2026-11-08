@@ -1,7 +1,8 @@
 {
-  "name": "campusops-twin-layer",
+  "name": "campus-twin-ops",
+  "description": "3D digital twin of SRM Easwari campus + AI-powered campus operations dashboard",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "npx concurrently \"vite --port 5174\" \"npm run dev --prefix dashboard/frontend\"",
